@@ -4,7 +4,13 @@ from pathlib import Path
 
 DB_DIR = Path(__file__).parent.parent / "data"
 DB_PATH = DB_DIR / "foresight.db"
-
+VALID_METRICS = {
+    "cpu_percent",
+    "ram_percent", 
+    "ram_used_mb",
+    "disk_percent",
+    "disk_used_gb",
+}
 
 def init_db() -> None:
     DB_DIR.mkdir(parents=True, exist_ok=True)
@@ -77,6 +83,31 @@ def get_snapshots(limit: int = 100) -> list[dict]:
     return [dict(row) for row in rows]
 
 
+def get_metric_series(metric: str, limit: int = 50) -> tuple[list, list]:
+    if metric not in VALID_METRICS:                          
+        raise ValueError(f"Invalid metric '{metric}'. "     
+                         f"Choose from: {VALID_METRICS}")
+    
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    cursor.execute(f"""
+        SELECT timestamp, {metric}
+        FROM snapshots
+        ORDER BY timestamp DESC
+        LIMIT ?
+    """, (limit,))
+
+    rows = cursor.fetchall()
+    conn.close()
+
+    rows = list(reversed(rows))
+    timestamps = [row["timestamp"] for row in rows]
+    values = [row[metric] for row in rows]
+
+    return timestamps, values
+
 if __name__ == "__main__":
     init_db()
     print(f"Database initialized at: {DB_PATH}")
@@ -99,3 +130,5 @@ if __name__ == "__main__":
     print(f"\nLast {len(results)} snapshots:")
     for row in results:
         print(row)
+
+

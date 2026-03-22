@@ -2,6 +2,9 @@ import typer
 from rich.console import Console
 from rich.table import Table
 from rich import box
+import plotext as plt
+
+from foresight.storage import get_metric_series, VALID_METRICS
 
 from foresight.storage import init_db, get_snapshots
 from foresight.collector import collect_loop, collect_snapshot
@@ -94,6 +97,41 @@ def status() -> None:
     console.print(f"\n  [dim]Snapshot saved at {snap['timestamp']}[/dim]\n")
 
 
+@app.command()
+def chart(
+    metric: str = typer.Option("cpu_percent", help="Metric to chart."),
+    limit: int = typer.Option(50, help="Number of recent snapshots to plot."),
+) -> None:
+    """Render an ASCII line chart of a metric over time in the terminal."""
+    init_db()
+
+    if metric not in VALID_METRICS:
+        console.print(f"[red]Invalid metric '{metric}'.[/red]")
+        console.print(f"Valid options: {', '.join(sorted(VALID_METRICS))}")
+        raise typer.Exit()
+
+    timestamps, values = get_metric_series(metric=metric, limit=limit)
+
+    if len(values) < 2:
+        console.print("[yellow]Not enough data to chart. "
+                      "Run 'foresight collect' first.[/yellow]")
+        raise typer.Exit()
+
+    short_labels = [ts[11:16] for ts in timestamps]
+    x_values = list(range(len(values)))
+
+    plt.clear_figure()
+    plt.plot(x_values, values, label=metric)
+    plt.title(f"{metric} — {short_labels[0]} to {short_labels[-1]} "
+              f"({len(values)} snapshots)")
+    plt.xlabel("Snapshot index")
+    plt.ylabel("Percent (%)")
+    plt.ylim(0, 100)
+    plt.plotsize(80, 20)
+    plt.show()
+
+
+    
 def _threshold_color(value: float) -> str:
     if value >= 85:
         return "bold red"
@@ -105,5 +143,6 @@ def _threshold_color(value: float) -> str:
 
 if __name__ == "__main__":
     app()
+
 
 
