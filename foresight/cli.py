@@ -121,7 +121,7 @@ def chart(
     x_values = list(range(len(values)))
 
     plt.clear_figure()
-    plt.plot(x_values, values, label=metric)
+    plt.plot(x_values, values, label=metric, marker="braille")
     plt.title(f"{metric} — {short_labels[0]} to {short_labels[-1]} "
               f"({len(values)} snapshots)")
     plt.xlabel("Snapshot index")
@@ -131,7 +131,7 @@ def chart(
     plt.show()
 
 
-    
+
 def _threshold_color(value: float) -> str:
     if value >= 85:
         return "bold red"
