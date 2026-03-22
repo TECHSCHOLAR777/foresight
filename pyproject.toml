@@ -1,9 +1,10 @@
 [build-system]
 requires = ["setuptools>=65", "wheel"]
 build-backend = "setuptools.build_meta"
+
 [project]
 name = "foresight-cli"
-version = "0.1.0"
+version = "0.1.3"
 description = "Predict system resource exhaustion before it happens."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -12,9 +13,18 @@ authors = [
     { name = "Rishi Garg" }
 ]
 keywords = [
-    "cli", "monitoring", "forecasting", "devops",
-    "time-series", "arima", "machine-learning",
-    "psutil", "system-monitoring"
+    "cli",
+    "monitoring",
+    "forecasting",
+    "devops",
+    "time-series",
+    "arima",
+    "machine-learning",
+    "psutil",
+    "system-monitoring",
+    "resource-forecasting",
+    "holt-winters",
+    "ensemble",
 ]
 classifiers = [
     "Programming Language :: Python :: 3.10",
@@ -38,9 +48,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/YOUR_USERNAME/foresight"
-Repository = "https://github.com/YOUR_USERNAME/foresight"
-Issues = "https://github.com/YOUR_USERNAME/foresight/issues"
+Homepage = "https://github.com/TECHSCHOLAR777/foresight"
+Repository = "https://github.com/TECHSCHOLAR777/foresight"
+Issues = "https://github.com/TECHSCHOLAR777/foresight/issues"
 
 [project.scripts]
 foresight = "foresight.cli:app"
@@ -48,4 +58,3 @@ foresight = "foresight.cli:app"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["foresight*"]
-
