@@ -5,10 +5,19 @@ from rich import box
 import plotext as plt
 
 from foresight.storage import get_metric_series, VALID_METRICS
-from foresight.forecaster import forecast_arima, forecast_holtwinters
 from foresight.storage import init_db, get_snapshots
 from foresight.collector import collect_loop, collect_snapshot
 from foresight.storage import save_snapshot
+from foresight.forecaster import (
+    forecast_arima,
+    forecast_holtwinters,
+    forecast_ensemble,
+    check_threshold,
+)
+
+
+
+
 
 app = typer.Typer(
     name="foresight",
@@ -135,19 +144,22 @@ def chart(
 def forecast(
     metric: str = typer.Option("cpu_percent", help="Metric to forecast."),
     steps: int = typer.Option(10, help="How many snapshots ahead to predict."),
-    model: str = typer.Option("arima", help="Model: arima or holtwinters."),
+    model: str = typer.Option(
+        "ensemble",
+        help="Model: arima, holtwinters, or ensemble (default)."
+    ),
 ) -> None:
-    """Forecast future resource usage using ARIMA or Holt-Winters."""
+    """Forecast future resource usage using ARIMA, Holt-Winters, or Ensemble."""
     init_db()
 
     if metric not in VALID_METRICS:
         console.print(f"[red]Invalid metric '{metric}'.[/red]")
         raise typer.Exit()
 
-    if model not in ("arima", "holtwinters"):
+    if model not in ("arima", "holtwinters", "ensemble"):
         console.print(
             f"[red]Invalid model '{model}'. "
-            f"Choose: arima or holtwinters[/red]"
+            f"Choose: arima, holtwinters, or ensemble[/red]"
         )
         raise typer.Exit()
 
@@ -158,8 +170,10 @@ def forecast(
 
     if model == "arima":
         result = forecast_arima(metric=metric, steps=steps)
-    else:
+    elif model == "holtwinters":
         result = forecast_holtwinters(metric=metric, steps=steps)
+    else:
+        result = forecast_ensemble(metric=metric, steps=steps)
 
     trend_color = {
         "rising": "red",
@@ -174,7 +188,14 @@ def forecast(
         f"  Trend         : "
         f"[{trend_color}]{result['trend_summary']}[/{trend_color}]"
     )
-    console.print(f"\n  Forecast values (next {steps} snapshots):")
+
+    if "components" in result:
+        console.print(f"\n  [dim]ARIMA      : {result['components']['arima']}[/dim]")
+        console.print(f"  [dim]Holt-Winter: {result['components']['holtwinters']}[/dim]")
+
+    console.print(f"\n  Blended forecast (next {steps} snapshots):" 
+                  if model == "ensemble" 
+                  else f"\n  Forecast values (next {steps} snapshots):")
 
     for i, val in enumerate(result["forecast"], start=1):
         bar = "█" * int(val / 5)
@@ -182,7 +203,66 @@ def forecast(
 
     console.print()
 
-    
+@app.command()
+def alert(
+    metric: str = typer.Option("cpu_percent", help="Metric to check."),
+    threshold: float = typer.Option(85.0, help="Alert threshold percentage."),
+    steps: int = typer.Option(10, help="How many steps ahead to check."),
+    model: str = typer.Option(
+        "ensemble",
+        help="Model: arima, holtwinters, or ensemble (default)."
+    ),
+) -> None:
+    """Check if a metric is predicted to breach a threshold."""
+    init_db()
+
+    if metric not in VALID_METRICS:
+        console.print(f"[red]Invalid metric '{metric}'.[/red]")
+        raise typer.Exit()
+
+    if model not in ("arima", "holtwinters", "ensemble"):
+        console.print(f"[red]Invalid model. Choose: arima, holtwinters, ensemble[/red]")
+        raise typer.Exit()
+
+    if model == "arima":
+        result = forecast_arima(metric=metric, steps=steps)
+    elif model == "holtwinters":
+        result = forecast_holtwinters(metric=metric, steps=steps)
+    else:
+        result = forecast_ensemble(metric=metric, steps=steps)
+
+    alert_result = check_threshold(
+        forecast_result=result,
+        threshold=threshold,
+    )
+
+    status = alert_result["status"]
+
+    status_style = {
+        "critical": "bold red",
+        "warning":  "bold yellow",
+        "ok":       "bold green",
+    }.get(status, "white")
+
+    status_icon = {
+        "critical": "🚨",
+        "warning":  "⚠️ ",
+        "ok":       "✅",
+    }.get(status, "")
+
+    console.print(
+        f"\n  {status_icon}  [{status_style}]{status.upper()}[/{status_style}]"
+        f" — {alert_result['message']}\n"
+    )
+
+    if alert_result["breaches"]:
+        console.print(f"  [dim]Predicted breaches above {threshold}%:[/dim]")
+        for b in alert_result["breaches"]:
+            console.print(
+                f"    Step {b['step']:>2} : [red]{b['value']}%[/red]"
+            )
+        console.print()
+
 def _threshold_color(value: float) -> str:
     if value >= 85:
         return "bold red"
