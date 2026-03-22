@@ -4,13 +4,15 @@ from pathlib import Path
 
 DB_DIR = Path(__file__).parent.parent / "data"
 DB_PATH = DB_DIR / "foresight.db"
+
 VALID_METRICS = {
     "cpu_percent",
-    "ram_percent", 
+    "ram_percent",
     "ram_used_mb",
     "disk_percent",
     "disk_used_gb",
 }
+
 
 def init_db() -> None:
     DB_DIR.mkdir(parents=True, exist_ok=True)
@@ -20,15 +22,15 @@ def init_db() -> None:
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS snapshots (
-            id        INTEGER PRIMARY KEY AUTOINCREMENT,
-            timestamp TEXT    NOT NULL,
-            cpu_percent     REAL NOT NULL,
-            ram_percent     REAL NOT NULL,
-            ram_used_mb     REAL NOT NULL,
-            ram_total_mb    REAL NOT NULL,
-            disk_percent    REAL NOT NULL,
-            disk_used_gb    REAL NOT NULL,
-            disk_total_gb   REAL NOT NULL
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp     TEXT    NOT NULL,
+            cpu_percent   REAL    NOT NULL,
+            ram_percent   REAL    NOT NULL,
+            ram_used_mb   REAL    NOT NULL,
+            ram_total_mb  REAL    NOT NULL,
+            disk_percent  REAL    NOT NULL,
+            disk_used_gb  REAL    NOT NULL,
+            disk_total_gb REAL    NOT NULL
         )
     """)
 
@@ -84,10 +86,12 @@ def get_snapshots(limit: int = 100) -> list[dict]:
 
 
 def get_metric_series(metric: str, limit: int = 50) -> tuple[list, list]:
-    if metric not in VALID_METRICS:                          
-        raise ValueError(f"Invalid metric '{metric}'. "     
-                         f"Choose from: {VALID_METRICS}")
-    
+    if metric not in VALID_METRICS:
+        raise ValueError(
+            f"Invalid metric '{metric}'. "
+            f"Choose from: {VALID_METRICS}"
+        )
+
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
@@ -107,6 +111,7 @@ def get_metric_series(metric: str, limit: int = 50) -> tuple[list, list]:
     values = [row[metric] for row in rows]
 
     return timestamps, values
+
 
 if __name__ == "__main__":
     init_db()
@@ -130,5 +135,3 @@ if __name__ == "__main__":
     print(f"\nLast {len(results)} snapshots:")
     for row in results:
         print(row)
-
-

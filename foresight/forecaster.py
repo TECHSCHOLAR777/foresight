@@ -1,12 +1,15 @@
 import warnings
 import pandas as pd
 from statsmodels.tsa.arima.model import ARIMA
-from foresight.storage import get_metric_series, VALID_METRICS
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
+from foresight.storage import get_metric_series, VALID_METRICS
+
 warnings.filterwarnings("ignore")
 
 MINIMUM_DATA_POINTS = 20
 
+
+# ─── Private Helpers ──────────────────────────────────────────────────────────
 
 def _validate_metric(metric: str) -> None:
     if metric not in VALID_METRICS:
@@ -26,9 +29,23 @@ def _load_series(metric: str, limit: int) -> pd.Series:
             f"Run 'foresight collect' to gather more data."
         )
 
-    series = pd.Series(values)
-    return series
+    return pd.Series(values)
 
+
+def _describe_trend(forecast_values: list[float]) -> str:
+    first = forecast_values[0]
+    last = forecast_values[-1]
+    delta = last - first
+
+    if delta > 5:
+        return "rising"
+    elif delta < -5:
+        return "falling"
+    else:
+        return "stable"
+
+
+# ─── Forecasting Models ───────────────────────────────────────────────────────
 
 def forecast_arima(
     metric: str = "cpu_percent",
@@ -46,18 +63,16 @@ def forecast_arima(
     forecast_values = [round(float(v), 2) for v in forecast_result]
     forecast_values = [max(0.0, min(100.0, v)) for v in forecast_values]
 
-    last_value = round(float(series.iloc[-1]), 2)
-    trend = _describe_trend(forecast_values)
-
     return {
         "metric": metric,
         "model": "ARIMA",
         "order": order,
-        "last_observed": last_value,
+        "last_observed": round(float(series.iloc[-1]), 2),
         "steps_ahead": steps,
         "forecast": forecast_values,
-        "trend_summary": trend,
+        "trend_summary": _describe_trend(forecast_values),
     }
+
 
 def forecast_holtwinters(
     metric: str = "cpu_percent",
@@ -82,18 +97,16 @@ def forecast_holtwinters(
         for v in forecast_result
     ]
 
-    last_value = round(float(series.iloc[-1]), 2)
-    trend = _describe_trend(forecast_values)
-
     return {
         "metric": metric,
         "model": "Holt-Winters",
         "order": None,
-        "last_observed": last_value,
+        "last_observed": round(float(series.iloc[-1]), 2),
         "steps_ahead": steps,
         "forecast": forecast_values,
-        "trend_summary": trend,
+        "trend_summary": _describe_trend(forecast_values),
     }
+
 
 def forecast_ensemble(
     metric: str = "cpu_percent",
@@ -106,43 +119,26 @@ def forecast_ensemble(
     hw_result = forecast_holtwinters(metric=metric, steps=steps, limit=limit)
 
     blended = [
-        round(
-            max(0.0, min(100.0, (a + b) / 2)), 2
-        )
-        for a, b in zip(
-            arima_result["forecast"],
-            hw_result["forecast"]
-        )
+        round(max(0.0, min(100.0, (a + b) / 2)), 2)
+        for a, b in zip(arima_result["forecast"], hw_result["forecast"])
     ]
-
-    last_value = arima_result["last_observed"]
-    trend = _describe_trend(blended)
 
     return {
         "metric": metric,
         "model": "Ensemble (ARIMA + Holt-Winters)",
         "order": None,
-        "last_observed": last_value,
+        "last_observed": arima_result["last_observed"],
         "steps_ahead": steps,
         "forecast": blended,
-        "trend_summary": trend,
+        "trend_summary": _describe_trend(blended),
         "components": {
             "arima": arima_result["forecast"],
             "holtwinters": hw_result["forecast"],
-        }
+        },
     }
 
-def _describe_trend(forecast_values: list[float]) -> str:
-    first = forecast_values[0]
-    last = forecast_values[-1]
-    delta = last - first
 
-    if delta > 5:
-        return "rising"
-    elif delta < -5:
-        return "falling"
-    else:
-        return "stable"
+# ─── Alerting ─────────────────────────────────────────────────────────────────
 
 def check_threshold(
     forecast_result: dict,
@@ -171,7 +167,7 @@ def check_threshold(
         status = "warning"
         message = (
             f"{metric} predicted to reach {first_breach['value']}% "
-            f"at step {first_breach['step']} "
+            f"in {steps_to_human_time(first_breach['step'])} "
             f"(threshold: {threshold}%)"
         )
     else:
@@ -192,12 +188,48 @@ def check_threshold(
     }
 
 
+# ─── Time Utilities ───────────────────────────────────────────────────────────
+
+def steps_to_human_time(step: int, interval_seconds: int = 60) -> str:
+    total_seconds = step * interval_seconds
+    total_minutes = total_seconds // 60
+
+    if total_minutes < 1:
+        return f"~{total_seconds}s"
+    elif total_minutes < 60:
+        return f"~{total_minutes}m"
+    else:
+        hours = total_minutes // 60
+        minutes = total_minutes % 60
+        if minutes == 0:
+            return f"~{hours}h"
+        return f"~{hours}h {minutes}m"
+
+
+def parse_horizon(horizon: str, interval_seconds: int = 60) -> int:
+    horizon = horizon.strip().lower()
+
+    if horizon.endswith("h"):
+        hours = float(horizon[:-1])
+        total_seconds = hours * 3600
+    elif horizon.endswith("m"):
+        minutes = float(horizon[:-1])
+        total_seconds = minutes * 60
+    else:
+        raise ValueError(
+            f"Invalid horizon '{horizon}'. "
+            f"Use format: '30m' for 30 minutes or '2h' for 2 hours."
+        )
+
+    steps = max(1, int(total_seconds // interval_seconds))
+    return steps
+
+
 if __name__ == "__main__":
     result = forecast_arima(metric="cpu_percent", steps=10)
-    print(f"\nMetric     : {result['metric']}")
-    print(f"Model      : {result['model']} {result['order']}")
-    print(f"Last seen  : {result['last_observed']}%")
-    print(f"Trend      : {result['trend_summary']}")
-    print(f"Forecast   : {result['forecast']}")
-
+    print(f"\nMetric   : {result['metric']}")
+    print(f"Model    : {result['model']} {result['order']}")
+    print(f"Last seen: {result['last_observed']}%")
+    print(f"Trend    : {result['trend_summary']}")
+    print(f"Forecast : {result['forecast']}")
 
