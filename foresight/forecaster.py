@@ -28,6 +28,16 @@ def _load_series(metric: str, limit: int) -> pd.Series:
             f"snapshots, got {len(values)}. "
             f"Run 'foresight collect' to gather more data."
         )
+    # Soft warning — good forecast needs 3x the requested limit
+    if len(values) < limit * 0.5:
+        import warnings
+        warnings.warn(
+            f"Only {len(values)} snapshots available. "
+            f"Forecasts improve significantly with more data. "
+            f"Run 'foresight collect --rounds 60' for best results.",
+            UserWarning,
+            stacklevel=2,
+        )
 
     return pd.Series(values)
 
