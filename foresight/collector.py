@@ -1,6 +1,8 @@
 import psutil
 from datetime import datetime
 import time
+from foresight.storage import save_snapshot 
+
 
 def collect_snapshot() -> dict:
     cpu = psutil.cpu_percent(interval=1)
@@ -32,6 +34,7 @@ def collect_loop(interval_seconds: int =5, rounds: int=3) -> None:
     print(f"Collecting every {interval_seconds}s for {rounds} rounds...\n")
     for i in range(rounds):
         snapshot = collect_snapshot()
+        save_snapshot(snapshot)
         print(f"[Round {i+1}] {snapshot['timestamp']}")
         print(f"  CPU: {snapshot['cpu_percent']}%")
         print(f"  RAM: {snapshot['ram_percent']}%  ({snapshot['ram_used_mb']} MB used)")
@@ -40,4 +43,7 @@ def collect_loop(interval_seconds: int =5, rounds: int=3) -> None:
             time.sleep(interval_seconds)
 
 if __name__ == "__main__":
+    from foresight.storage import init_db
+
+    init_db()
     collect_loop(interval_seconds=5, rounds=3)
