@@ -2,7 +2,7 @@ import warnings
 import pandas as pd
 from statsmodels.tsa.arima.model import ARIMA
 from foresight.storage import get_metric_series, VALID_METRICS
-
+from statsmodels.tsa.holtwinters import ExponentialSmoothing
 warnings.filterwarnings("ignore")
 
 MINIMUM_DATA_POINTS = 20
@@ -59,7 +59,41 @@ def forecast_arima(
         "trend_summary": trend,
     }
 
+def forecast_holtwinters(
+    metric: str = "cpu_percent",
+    steps: int = 10,
+    limit: int = 100,
+) -> dict:
+    _validate_metric(metric)
+    series = _load_series(metric=metric, limit=limit)
 
+    model = ExponentialSmoothing(
+        series,
+        trend="add",
+        seasonal=None,
+        initialization_method="estimated",
+    )
+
+    fitted = model.fit(optimized=True)
+    forecast_result = fitted.forecast(steps=steps)
+
+    forecast_values = [
+        round(max(0.0, min(100.0, float(v))), 2)
+        for v in forecast_result
+    ]
+
+    last_value = round(float(series.iloc[-1]), 2)
+    trend = _describe_trend(forecast_values)
+
+    return {
+        "metric": metric,
+        "model": "Holt-Winters",
+        "order": None,
+        "last_observed": last_value,
+        "steps_ahead": steps,
+        "forecast": forecast_values,
+        "trend_summary": trend,
+    }
 def _describe_trend(forecast_values: list[float]) -> str:
     first = forecast_values[0]
     last = forecast_values[-1]
