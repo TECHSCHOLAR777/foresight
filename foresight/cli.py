@@ -9,7 +9,7 @@ from foresight.storage import get_metric_series, VALID_METRICS
 from foresight.storage import init_db, get_snapshots
 from foresight.collector import collect_loop, collect_snapshot
 from foresight.storage import save_snapshot
-
+from foresight.forecaster import forecast_arima
 app = typer.Typer(
     name="foresight",
     help="Predict system resource exhaustion before it happens.",
@@ -131,6 +131,40 @@ def chart(
     plt.show()
 
 
+@app.command()
+def forecast(
+    metric: str = typer.Option("cpu_percent", help="Metric to forecast."),
+    steps: int = typer.Option(10, help="How many snapshots ahead to predict."),
+) -> None:
+    """Forecast future resource usage using ARIMA."""
+    init_db()
+
+    if metric not in VALID_METRICS:
+        console.print(f"[red]Invalid metric '{metric}'.[/red]")
+        raise typer.Exit()
+
+    console.print(f"\n[bold]Running ARIMA forecast for[/bold] "
+                  f"[cyan]{metric}[/cyan]...\n")
+
+    result = forecast_arima(metric=metric, steps=steps)
+
+    trend_color = {
+        "rising": "red",
+        "falling": "green",
+        "stable": "yellow"
+    }.get(result["trend_summary"], "white")
+
+    console.print(f"  Last observed : {result['last_observed']}%")
+    console.print(f"  Steps ahead   : {result['steps_ahead']}")
+    console.print(f"  Trend         : "
+                  f"[{trend_color}]{result['trend_summary']}[/{trend_color}]")
+    console.print(f"\n  Forecast values (next {steps} snapshots):")
+
+    for i, val in enumerate(result["forecast"], start=1):
+        bar = "█" * int(val / 5)
+        console.print(f"    Step {i:>2} : {val:>6.2f}%  {bar}")
+
+    console.print()
 
 def _threshold_color(value: float) -> str:
     if value >= 85:
