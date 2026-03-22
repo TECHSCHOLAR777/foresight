@@ -1,0 +1,27 @@
+Metadata-Version: 2.4
+Name: foresight-cli
+Version: 0.1.0
+Summary: Predict system resource exhaustion before it happens.
+Author: Rishi Garg
+Project-URL: Homepage, https://github.com/YOUR_USERNAME/foresight
+Project-URL: Repository, https://github.com/YOUR_USERNAME/foresight
+Project-URL: Issues, https://github.com/YOUR_USERNAME/foresight/issues
+Keywords: cli,monitoring,forecasting,devops,time-series,arima,machine-learning,psutil,system-monitoring
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Environment :: Console
+Classifier: Topic :: System :: Monitoring
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: System Administrators
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: psutil>=5.9.0
+Requires-Dist: rich>=13.0.0
+Requires-Dist: typer>=0.9.0
+Requires-Dist: plotext>=5.2.0
+Requires-Dist: pandas>=2.0.0
+Requires-Dist: statsmodels>=0.14.0

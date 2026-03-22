@@ -1,0 +1,2 @@
+[console_scripts]
+foresight = foresight.cli:app

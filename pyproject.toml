@@ -1,15 +1,51 @@
 [build-system]
-requires = ["setuptools>=64"]
+requires = ["setuptools>=65", "wheel"]
 build-backend = "setuptools.build_meta"
-
 [project]
-name = "foresight"
+name = "foresight-cli"
 version = "0.1.0"
 description = "Predict system resource exhaustion before it happens."
+readme = "README.md"
+license = { file = "LICENSE" }
 requires-python = ">=3.10"
+authors = [
+    { name = "Rishi Garg" }
+]
+keywords = [
+    "cli", "monitoring", "forecasting", "devops",
+    "time-series", "arima", "machine-learning",
+    "psutil", "system-monitoring"
+]
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Environment :: Console",
+    "Topic :: System :: Monitoring",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+]
+dependencies = [
+    "psutil>=5.9.0",
+    "rich>=13.0.0",
+    "typer>=0.9.0",
+    "plotext>=5.2.0",
+    "pandas>=2.0.0",
+    "statsmodels>=0.14.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/YOUR_USERNAME/foresight"
+Repository = "https://github.com/YOUR_USERNAME/foresight"
+Issues = "https://github.com/YOUR_USERNAME/foresight/issues"
 
 [project.scripts]
 foresight = "foresight.cli:app"
 
 [tool.setuptools.packages.find]
+where = ["."]
 include = ["foresight*"]
+
