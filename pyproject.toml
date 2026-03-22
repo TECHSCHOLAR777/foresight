@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "foresight"
+version = "0.1.0"
+description = "Predict system resource exhaustion before it happens."
+requires-python = ">=3.10"
+
+[project.scripts]
+foresight = "foresight.cli:app"
+
+[tool.setuptools.packages.find]
+include = ["foresight*"]
