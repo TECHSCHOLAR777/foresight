@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "foresight-cli"
-version = "0.1.3"
+version = "0.1.4"
 description = "Predict system resource exhaustion before it happens."
 readme = "README.md"
 license = { file = "LICENSE" }

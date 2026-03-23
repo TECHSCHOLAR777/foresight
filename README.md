@@ -70,6 +70,28 @@ pip install foresight-cli
 
 That's it. The `foresight` command is now available globally.
 
+### ⚠️ Windows Users — If `foresight` is Not Recognized
+
+This is a common Windows issue. After installing, if you see:
+```
+foresight : The term 'foresight' is not recognized...
+```
+
+Run this **once** in PowerShell to fix it permanently:
+
+```powershell
+[System.Environment]::SetEnvironmentVariable(
+  "Path",
+  $env:Path + ";$env:APPDATA\Python\Python310\Scripts",
+  "User"
+)
+```
+
+Then **close and reopen your terminal.** Done — works forever after that.
+
+> 💡 Replace `Python310` with your version. Check with `python --version`.
+> For example Python 3.11 → `Python311`, Python 3.12 → `Python312`.
+
 ### Collect Data
 
 ```bash
@@ -269,8 +291,8 @@ Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
 ## 👨‍💻 Author
 
 Built by **Rishi Garg**
-BTech Software Engineering (Batch of 2029), Delhi Technological University
-Member, [AIMS-DTU](https://aimsdtu.in) — AI/ML Society of DTU
+BTech, Software Engineering (Batch of 2029), Delhi Technological University,
+Member @[AIMS-DTU](https://aimsdtu.in) — AI/ML Society of DTU
 
 *Built as a portfolio and learning project with a focus on
 time-series forecasting, system programming, and open-source contribution.*
