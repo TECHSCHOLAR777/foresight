@@ -5,7 +5,7 @@
 **Predict system resource exhaustion before it happens.**
 
 [![PyPI](https://img.shields.io/pypi/v/foresight-cli)](https://pypi.org/project/foresight-cli/)
-[![Downloads](https://static.pepy.tech/personalized-badge/foresight-cli?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads)](https://pepy.tech/project/foresight-cli)
+[![Downloads](https://static.pepy.tech/personalized-badge/foresight-cli?period=total&units=INTERNATIONAL_SYSTEM&left_color=GRAY&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/foresight-cli)
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Open Source](https://img.shields.io/badge/Open%20Source-%E2%9D%A4-red)](https://github.com/TECHSCHOLAR777/foresight)
